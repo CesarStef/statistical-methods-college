@@ -1,0 +1,123 @@
+---
+title: "Project: College Dataset"
+author: "Stefano Cattonar, Ines El Gataa, Andrija Nicić, Angelica Rota"
+date: "2025-01-90"
+output:
+  html_document:
+    toc: true
+    toc_depth: '3'
+    df_print: paged
+  pdf_document:
+    toc: true
+    toc_depth: 3
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+#A random forest regression
+
+# Load the data
+dataset <- read.csv("College.csv")
+
+# Split the data into training and testing sets
+set.seed(0)
+
+# Drop dataset$Enroll and drop dataset$Accept
+dataset_cleared <- dataset
+dataset_cleared$Accept <- NULL # <- dataset_cleared$Accept <- dataset_cleared$Enroll <- NULL 
+dataset_cleared$Enroll <- NULL
+
+dataset_cleared$X <- NULL
+
+dataset_cleared$Private <- as.factor(dataset_cleared$Private)
+
+dataset_cleared$Private <- as.numeric(dataset_cleared$Private) - 1
+
+########
+
+dataset_cleared$F.Undergrad <- log(dataset_cleared$F.Undergrad)
+
+dataset_cleared$P.Undergrad <- log(dataset_cleared$P.Undergrad)
+
+### WITH LOG WE LOST 0.1% OF R2 ON THE TRAINING SET
+
+normalize <- function(x) {
+  return((x - min(x)) / (max(x) - min(x)))
+}
+
+dataset_cleared[ , 2:ncol(dataset_cleared)] <- lapply(dataset_cleared[ , 2:ncol(dataset_cleared)], normalize)
+
+#####
+
+
+# Separate the data into training and testing sets
+
+train_index <- sample(nrow(dataset_cleared), (0.2)*nrow(dataset_cleared))
+
+train_data <- dataset_cleared[train_index,]
+test_data <- dataset_cleared[-train_index,]
+
+
+# Separate train_data and test_data into predictors and response
+
+train_data$Apps <- NULL
+test_data$Apps <- NULL
+
+# Response
+
+#train_data$Apps <- dataset$Apps[train_index]
+
+
+
+# Check the structure of the training and testing sets
+#names(train_data)
+#names(test_data)
+
+#setdiff(names(train_data), names(test_data))
+
+
+# Do some bootstrap sampling to get a sense of the variability of the random forest model
+
+# Fit the random forest model
+
+library(randomForest)
+
+rf_model <- randomForest(x=train_data, formula=Apps ~ ., y=dataset$Apps[train_index], data = train_data,  ntree = 77, nodesize=1, xtest=test_data, ytest= dataset$Apps[-train_index], keep.forest = TRUE, replace = TRUE, proximity=TRUE, oob.prox = FALSE)
+
+#rf_model$proximity
+
+
+rf_model$type
+
+rf_model$importance
+
+#rf_model$forest
+
+mean(rf_model$mse)
+# Make predictions
+
+rf_pred <- predict(rf_model, test_data)
+
+# Calculate the RMSE
+
+rmse <- sqrt(mean((rf_pred - dataset$Apps[-train_index])^2))
+
+#rmse
+
+mean(rf_model$rsq)
+mean(rf_model$test$rsq)
+
+# Plot the results, blu dots are the real values, red dots are the predicted values
+
+plot(dataset$Apps[-train_index], col = "blue", pch = 20, xlab = "Index", ylab = "Apps")
+points(rf_pred, col = "red", pch = 20)
+
+
+# Plot the MSE of the model
+pippo <- plot(rf_model, type="l", log="y")
+
+```

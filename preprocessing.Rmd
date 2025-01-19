@@ -1,0 +1,201 @@
+---
+title: "Project: College Dataset"
+author: "Stefano Cattonar, Ines El Gataa, Andrija Nicić, Angelica Rota"
+date: "2025-01-90"
+output:
+  html_document:
+    toc: true
+    toc_depth: '3'
+    df_print: paged
+  pdf_document:
+    toc: true
+    toc_depth: 3
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r loading libraries, message=FALSE, warning=FALSE}
+library(dplyr)
+library(corrplot)
+library(caret)
+```
+
+# Introduction
+
+This project aims to analyze the `College` dataset from *An Introduction to Statistical Learning* to explore the factors that influence the number of applications received by colleges, represented by the response variable `Apps`. The dataset provides comprehensive information on various attributes of U.S. colleges, such as tuition costs, room and board expenses, financial aid, and student demographics. By examining these factors, we seek to better understand the trends and drivers behind college application rates.
+
+# Preprocessing
+
+## Data Examination
+
+```{r}
+College = read.csv("https://www.statlearning.com/s/College.csv", header = TRUE)
+
+head(College)
+```
+
+`X`: name of the college
+
+`Private`: A factor with levels No and Yes indicating private or public university
+
+`Accept`: Number of applications accepted
+
+`Enroll`: Number of new students enrolled
+
+`Top10perc`: Percentage new students from top 10% of high school class
+
+`Top25perc`: Percentage new students from top 25% of high school class
+
+`F.Undergrad`: Number of full time undergraduates
+
+`P.Undergrad`: Number of part time undergraduates
+
+`Outstate`: Out-of-state tuition
+
+`Room.Board`: Room and board costs
+
+`Books`: Estimated book costs
+
+`Personal`: Estimated personal spending
+
+`PhD`: Percentage of faculty with Ph.D.’s
+
+`Terminal`: Percentage of faculty with terminal degree
+
+`S.F.Ratio`: Student/faculty ratio
+
+`perc.alumni`: Percentage alumni who donate
+
+`Expend`: Instructional expenditure per student
+
+`Grad.Rate`: Graduation rate
+
+**Response variable**
+
+`Apps`: Number of applications received
+
+
+## Data Exploration 
+
+```{r}
+summary(College)
+```
+
+
+### Observations
+
+1. We can note that the `X` column will yield no usable information.
+
+```{r}
+College <- select(College, -X)
+```
+
+2. We have to exclude also `Accept` and `Enroll` to prevent data leakage.
+
+```{r}
+College <- select(College, -c(Accept, Enroll))
+```
+
+3. All the variables does not have negative values.
+
+4. The variables does not have NA, so we don't need to replace the missing values
+
+5. The variable `Private` is a categorical one so we convert its values.
+
+```{r}
+College$Private <- as.factor(College$Private)
+
+College$Private <- as.numeric(College$Private) - 1  # "Yes" is 1, "No" is 0
+
+College$Private[11:30]
+```
+
+6. We can note that `Private` is not balanced 
+
+
+
+```{r}
+table(College$Private)
+```
+
+# Here we can discuss that Private is unbalanced but 1 to 2 is not a big difference and so we don't need to make corrections to the dataset
+
+7. We want to check if we have some duplicates
+
+```{r}
+idx <- which(duplicated(College))
+idx
+```
+
+## Variable visualization
+
+Now we can visualize some of the most interesting variables and their distributions.
+
+```{r}
+par(mfrow = c(2, 3))
+barplot(table(College$Private), main = "Private")
+boxplot(College$F.Undergrad, main="Full time undergraduates")
+boxplot(College$P.Undergrad, main= "Part time undergraduates")
+boxplot(College$Room.Board, main = "Room and board costs")
+boxplot(College$PhD, main="PhD")
+boxplot(College$Grad.Rate, main="Graduation rate")
+```
+```{r}
+par(mfrow = c(2, 3))
+hist(College$F.Undergrad, main="Full time undergraduates")
+hist(College$P.Undergrad, main= "Part time undergraduates")
+hist(College$Room.Board, main = "Room and board costs")
+hist(College$PhD, main="PhD")
+hist(College$Grad.Rate, main="Graduation rate")
+```
+
+We can see that the first two variables are really skewed so we can take the logarithm.
+
+```{r}
+College$F.Undergrad <- log(College$F.Undergrad)
+College$P.Undergrad <- log(College$P.Undergrad)
+
+par(mfrow = c(2, 2))
+
+boxplot(College$F.Undergrad, main="Full time undergraduates")
+boxplot(College$P.Undergrad, main= "Part time undergraduates")
+
+hist(College$F.Undergrad, main="Full time undergraduates")
+hist(College$P.Undergrad, main= "Part time undergraduates")
+```
+
+
+## Correlation matrix
+
+We plot the correlation matrix to examine the relationships between the predictors and `Apps`
+
+```{r}
+correlation_matrix <- cor(College)
+
+corrplot(correlation_matrix, method="color", tl.cex = 0.8)
+```
+
+Now we can visualize some of the correlated variables
+
+```{r}
+boxplot(College$F.Undergrad ~ College$Private)
+boxplot(College$P.Undergrad ~ College$Private)
+boxplot(log(College$Apps) ~ College$Private)
+```
+
+Now let's normalize the data so that we have all the data with comparable scales.
+
+```{r}
+normalize <- function(x) {
+  return((x - min(x)) / (max(x) - min(x)))
+}
+
+college_norm <- College
+college_norm[ , 2:ncol(College)] <- lapply(College[ , 2:ncol(College)], normalize)
+
+summary(college_norm)
+```
+
