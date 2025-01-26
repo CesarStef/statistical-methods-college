@@ -121,3 +121,49 @@ points(rf_pred, col = "red", pch = 20)
 pippo <- plot(rf_model, type="l", log="y")
 
 ```
+
+
+```{r}
+library(randomForestExplainer)
+
+rf_explained_model <- randomForest(x=train_data, formula=Apps ~ ., y=dataset$Apps[train_index], data = train_data,  ntree = 1000, nodesize=1, xtest=test_data, ytest= dataset$Apps[-train_index], keep.forest = TRUE, replace = TRUE, proximity=TRUE, oob.prox = FALSE, importance = TRUE, localImp = TRUE)
+
+plot(rf_explained_model, main = "Learning curve of the forest")
+legend("topright", c("error for 'dead'", "misclassification error", "error for 'alive'"), lty = c(1,1,1), col = c("green", "black", "red"))
+
+rf_explained_model
+
+min_depth_frame <- min_depth_distribution(rf_explained_model)
+min_depth_frame
+plot_min_depth_distribution(min_depth_frame, k=16)
+
+importance_frame <- measure_importance(rf_explained_model)
+importance_frame
+
+
+plot_multi_way_importance(importance_frame, size_measure = "no_of_nodes")
+
+train_data$Top10perc <- NULL
+train_data$PhD <- NULL
+train_data$Personal <- NULL
+train_data$Books <- NULL
+
+test_data$Top10perc <- NULL
+test_data$PhD <- NULL
+test_data$Personal <- NULL
+test_data$Books <- NULL
+
+i = length(test_data)
+# TODO: mtry now is the number of predictors, we should check the paper about Extremely Randomized Trees, I'm not sure if this is correct...
+rf_new <- randomForest(x=train_data, formula=Apps ~ ., y=dataset$Apps[train_index], data = train_data,  ntree = 1000, nodesize=1, xtest=test_data, ytest= dataset$Apps[-train_index], keep.forest = TRUE, replace = TRUE, proximity=TRUE, oob.prox = FALSE, importance = TRUE, localImp = TRUE, mtry=i)
+
+rf_new
+
+plot_multi_way_importance(measure_importance(rf_new), size_measure = "no_of_nodes")
+
+plot(rf_new, main = "Learning curve of the forest")
+
+measure_importance(rf_new)
+#help("explain_forest")
+#explain_forest(rf_explained_model, interactions = TRUE, data = train_data)
+```

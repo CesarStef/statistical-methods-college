@@ -132,27 +132,33 @@ idx
 
 ## Variable visualization
 
-Now we can visualize some of the most interesting variables and their distributions.
+#### OLD Now we can visualize some of the most interesting variables and their distributions.
 
+#### Now we can visualize the variables and their distributions.
+
+#### Boxplot, excluded Private that are a categorical variable
 ```{r}
-par(mfrow = c(2, 3))
-barplot(table(College$Private), main = "Private")
-boxplot(College$F.Undergrad, main="Full time undergraduates")
-boxplot(College$P.Undergrad, main= "Part time undergraduates")
-boxplot(College$Room.Board, main = "Room and board costs")
-boxplot(College$PhD, main="PhD")
-boxplot(College$Grad.Rate, main="Graduation rate")
-```
-```{r}
-par(mfrow = c(2, 3))
-hist(College$F.Undergrad, main="Full time undergraduates")
-hist(College$P.Undergrad, main= "Part time undergraduates")
-hist(College$Room.Board, main = "Room and board costs")
-hist(College$PhD, main="PhD")
-hist(College$Grad.Rate, main="Graduation rate")
+
+par(mfrow=c(2,3))
+for (i in 1:length(College)) {
+  if ( names(College[i]) != "Private"){
+    boxplot(College[,i], main=names(College[i]))
+  }
+}
 ```
 
-We can see that the first two variables are really skewed so we can take the logarithm.
+###### Boxplot, excluded Private that are a categorical variable
+
+```{r}
+par(mfrow=c(2,3))
+for (i in 1:length(College)) {
+    hist(College[,i], main=names(College[i]))
+}
+```
+
+OLD We can see that the first two variables are really skewed so we can take the logarithm.
+
+We can see that F.Undergrad and P.Undergrad are really skewed so we can take the logarithm.
 
 ```{r}
 College$F.Undergrad <- log(College$F.Undergrad)
@@ -177,6 +183,15 @@ correlation_matrix <- cor(College)
 
 corrplot(correlation_matrix, method="color", tl.cex = 0.8)
 ```
+
+# As you can see from the corralation matrix, there are some variables that are correlated with each other. We can see that the variables Terminal and PhD are really heavily correlated. This fenomena is caused by the fact that PhD containes a sub group of Terminal. So we can exclude one of the two variables, PhD in our case.
+
+# We can also see that the variables Top10perc and Top25perc are correlated. For the same reason we can exclude one of the two variables, Top10perc in our case.
+
+# We can also see that the variables Outstate and Room-and-board are heavy correlated, but it is not a problem because they are not a sub group of each other.
+
+
+
 
 Now we can visualize some of the correlated variables
 

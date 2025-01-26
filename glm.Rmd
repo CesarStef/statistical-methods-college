@@ -1,0 +1,64 @@
+```{r}
+dataset <- read.csv("College.csv")
+
+dataset_cleared <- dataset
+dataset_cleared$Accept <- NULL # <- dataset_cleared$Accept <- dataset_cleared$Enroll <- NULL
+dataset_cleared$Enroll <- NULL
+dataset_cleared$X <- NULL
+dataset_cleared$Apps <- NULL
+
+normalize <- function(x) {
+  return((x - min(x)) / (max(x) - min(x)))
+}
+
+dataset_cleared[ , 2:ncol(dataset_cleared)] <- lapply(dataset_cleared[ , 2:ncol(dataset_cleared)], normalize)
+
+
+dataset_cleared$Private <- as.factor(dataset_cleared$Private)
+
+dataset_cleared$Private <- as.numeric(dataset_cleared$Private) - 1
+
+########
+
+
+#set the small model
+nothing <- glm(dataset$Apps ~ .,data=dataset_cleared, family=poisson)
+
+private <- glm(dataset$Apps ~ dataset_cleared$Private,data=dataset_cleared, family=poisson)
+summary(private)
+
+undergrad <- glm(dataset$Apps ~ dataset_cleared$F.Undergrad,data=dataset_cleared, family=poisson)
+summary(undergrad)
+
+undergradPrivate <- glm(dataset$Apps ~ dataset_cleared$F.Undergrad + dataset_cleared$Private,data=dataset_cleared, family=poisson)
+summary(undergradPrivate)
+
+
+nothing$aic
+
+
+nothing$null.deviance
+
+nothing$deviance
+
+summary(nothing)
+
+dataset_cleared$Top10perc <- NULL
+dataset_cleared$PhD <- NULL
+
+clearedFromVariables <- glm(dataset$Apps ~ .,data=dataset_cleared, family=poisson)
+
+summary(clearedFromVariables)
+
+dataset_cleared$Personal <- NULL
+
+summary(glm(dataset$Apps ~ .,data=dataset_cleared, family=poisson))
+
+#545119
+#267817
+
+#private -> 1934025
+#undergrad -> 1074621
+#undergradPrivate -> 1062182
+#clearedFromVariables -> 549073
+```
