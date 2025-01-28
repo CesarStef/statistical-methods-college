@@ -146,15 +146,15 @@ plot_multi_way_importance(importance_frame, size_measure = "no_of_nodes")
 train_data$Top10perc <- NULL
 train_data$PhD <- NULL
 train_data$Personal <- NULL
-train_data$Books <- NULL
+#train_data$Books <- NULL
 
 test_data$Top10perc <- NULL
 test_data$PhD <- NULL
 test_data$Personal <- NULL
-test_data$Books <- NULL
+#test_data$Books <- NULL
 
 i = length(test_data)
-# TODO: mtry now is the number of predictors, we should check the paper about Extremely Randomized Trees, I'm not sure if this is correct...
+# TODO: mtry now is the number of predictors, we should check the paper about Extremely Randomized Trees, I'm not sure if this is correct... https://daviddalpiaz.github.io/stat432sp18/lab/enslab/enslab.html
 rf_new <- randomForest(x=train_data, formula=Apps ~ ., y=dataset$Apps[train_index], data = train_data,  ntree = 1000, nodesize=1, xtest=test_data, ytest= dataset$Apps[-train_index], keep.forest = TRUE, replace = TRUE, proximity=TRUE, oob.prox = FALSE, importance = TRUE, localImp = TRUE, mtry=i)
 
 rf_new

@@ -1,3 +1,4 @@
+Load dataset and preprocess it based on preprocessing.Rmd
 ```{r}
 dataset <- read.csv("College.csv")
 
@@ -17,31 +18,30 @@ dataset_cleared[ , 2:ncol(dataset_cleared)] <- lapply(dataset_cleared[ , 2:ncol(
 dataset_cleared$Private <- as.factor(dataset_cleared$Private)
 
 dataset_cleared$Private <- as.numeric(dataset_cleared$Private) - 1
+```
 
-########
+Try a glm with all the usable parameters:
 
+```{r}
 
-#set the small model
-nothing <- glm(dataset$Apps ~ .,data=dataset_cleared, family=poisson)
+glm_all_parameters <- glm(dataset$Apps ~ .,data=dataset_cleared, family=poisson)
 
-private <- glm(dataset$Apps ~ dataset_cleared$Private,data=dataset_cleared, family=poisson)
-summary(private)
+#private <- glm(dataset$Apps ~ dataset_cleared$Private,data=dataset_cleared, family=poisson)
+#summary(private)
 
-undergrad <- glm(dataset$Apps ~ dataset_cleared$F.Undergrad,data=dataset_cleared, family=poisson)
-summary(undergrad)
+#undergrad <- glm(dataset$Apps ~ dataset_cleared$F.Undergrad,data=dataset_cleared, family=poisson)
+#summary(undergrad)
 
-undergradPrivate <- glm(dataset$Apps ~ dataset_cleared$F.Undergrad + dataset_cleared$Private,data=dataset_cleared, family=poisson)
-summary(undergradPrivate)
+#undergradPrivate <- glm(dataset$Apps ~ dataset_cleared$F.Undergrad + dataset_cleared$Private,data=dataset_cleared, family=poisson)
+#summary(undergradPrivate)
 
+summary(glm_all_parameters)
 
-nothing$aic
+```
 
+Personal is not significant and as told in preprocessing.Rmd we should remove Top10perc and PhD too.
 
-nothing$null.deviance
-
-nothing$deviance
-
-summary(nothing)
+```{r}
 
 dataset_cleared$Top10perc <- NULL
 dataset_cleared$PhD <- NULL
@@ -51,14 +51,13 @@ clearedFromVariables <- glm(dataset$Apps ~ .,data=dataset_cleared, family=poisso
 summary(clearedFromVariables)
 
 dataset_cleared$Personal <- NULL
-
+# Books is almost useless, we should motivate a reason to remove it.
+#dataset_cleared$Books <- NULL
 summary(glm(dataset$Apps ~ .,data=dataset_cleared, family=poisson))
-
-#545119
-#267817
 
 #private -> 1934025
 #undergrad -> 1074621
 #undergradPrivate -> 1062182
-#clearedFromVariables -> 549073
+#clearedFromVariablesWithBooks -> 549073
+#clearedFromVariables -> 554278
 ```
