@@ -155,7 +155,7 @@ test_data$Books <- NULL
 
 i = length(test_data)
 # TODO: mtry now is the number of predictors, we should check the paper about Extremely Randomized Trees, I'm not sure if this is correct...
-rf_new <- randomForest(x=train_data, formula=Apps ~ ., y=dataset$Apps[train_index], data = train_data,  ntree = 1000, nodesize=1, xtest=test_data, ytest= dataset$Apps[-train_index], keep.forest = TRUE, replace = TRUE, proximity=TRUE, oob.prox = FALSE, importance = TRUE, localImp = TRUE, mtry=i)
+rf_new <- randomForest(x=train_data, formula=Apps ~ ., y=dataset$Apps[train_index], data = train_data,  ntree = 1000, nodesize=1, xtest=test_data, ytest= dataset$Apps[-train_index], keep.forest = TRUE, replace = TRUE, proximity=TRUE, oob.prox = FALSE, importance = TRUE, localImp = TRUE)
 
 rf_new
 
