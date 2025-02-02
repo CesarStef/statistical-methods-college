@@ -33,7 +33,7 @@ This project aims to analyze the `College` dataset from *An Introduction to Stat
 
 ```{r}
 College = read.csv("https://www.statlearning.com/s/College.csv", header = TRUE)
-
+help(head)
 head(College)
 ```
 
@@ -97,6 +97,8 @@ College <- select(College, -X)
 
 ```{r}
 College <- select(College, -c(Accept, Enroll))
+
+summary(College)
 ```
 
 3. All the variables does not have negative values.
@@ -119,7 +121,17 @@ College$Private[11:30]
 
 ```{r}
 table(College$Private)
+
+index_dataset_public <- which(College$Private == 0)
+
+index_dataset_private <- which(College$Private == 1)
+
+private_proportion <- (length(index_dataset_private) / length(index_dataset_public))
+
+private_proportion
 ```
+
+We can see from private_proportion that "Yes" is 2.65 times more frequent than "No".
 
 # Here we can discuss that Private is unbalanced but 1 to 2 is not a big difference and so we don't need to make corrections to the dataset
 

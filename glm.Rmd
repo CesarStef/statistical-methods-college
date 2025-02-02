@@ -53,11 +53,49 @@ summary(clearedFromVariables)
 dataset_cleared$Personal <- NULL
 # Books is almost useless, we should motivate a reason to remove it.
 #dataset_cleared$Books <- NULL
+
+# Calculate the number of training lines (80% of the dataset)
+n_training_lines <- floor(0.8 * nrow(dataset_cleared))
+
+# Ensure the number of training lines is even
+if (n_training_lines %% 2 != 0) {
+  n_training_lines <- n_training_lines - 1
+}
+
+
+# save index of lines with Private 1 and lines with Private 0
+index_dataset_public <- which(dataset_cleared$Private == 0)
+
+index_dataset_private <- which(dataset_cleared$Private == 1)
+
+# Calculate the exact percentage of private 1 lines in the dataset
+percentage_private <- length(index_dataset_private) / nrow(dataset_cleared)
+
+# take 80% of lines from index_dataset_public
+train_index_dataset_public <- sample(index_dataset_public, floor(n_training_lines * (1 - percentage_private)))
+train_index_dataset_private <- sample(index_dataset_private, floor(n_training_lines * (percentage_private)))
+
+# Cobine the two train_index_dataset_ into train_index
+train_index <- c(train_index_dataset_public, train_index_dataset_private)
+
+
+train_data <- dataset_cleared[train_index,]
+test_data <- dataset_cleared[-train_index,]
+
+
+glm_model <- glm(dataset$Apps[train_index] ~ .,data=train_data, family=poisson)
+
+summary(glm_model)
+
 summary(glm(dataset$Apps ~ .,data=dataset_cleared, family=poisson))
 
+  <- predict.glm(glm_model, newdata = test_data)
 #private -> 1934025
 #undergrad -> 1074621
 #undergradPrivate -> 1062182
 #clearedFromVariablesWithBooks -> 549073
 #clearedFromVariables -> 554278
+
+
+
 ```

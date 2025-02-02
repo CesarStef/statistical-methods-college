@@ -56,7 +56,30 @@ dataset_cleared[ , 2:ncol(dataset_cleared)] <- lapply(dataset_cleared[ , 2:ncol(
 
 # Separate the data into training and testing sets
 
-train_index <- sample(nrow(dataset_cleared), (0.8)*nrow(dataset_cleared))
+# Calculate the number of training lines (80% of the dataset)
+n_training_lines <- floor(0.8 * nrow(dataset_cleared))
+
+# Ensure the number of training lines is even
+if (n_training_lines %% 2 != 0) {
+  n_training_lines <- n_training_lines - 1
+}
+
+
+# save index of lines with Private 1 and lines with Private 0
+index_dataset_public <- which(dataset_cleared$Private == 0)
+
+index_dataset_private <- which(dataset_cleared$Private == 1)
+
+# Calculate the exact percentage of private 1 lines in the dataset
+percentage_private <- length(index_dataset_private) / nrow(dataset_cleared)
+
+# take 80% of lines from index_dataset_public
+train_index_dataset_public <- sample(index_dataset_public, floor(n_training_lines * (1 - percentage_private)))
+train_index_dataset_private <- sample(index_dataset_private, floor(n_training_lines * (percentage_private)))
+
+# Cobine the two train_index_dataset_ into train_index
+train_index <- c(train_index_dataset_public, train_index_dataset_private)
+
 
 train_data <- dataset_cleared[train_index,]
 test_data <- dataset_cleared[-train_index,]
@@ -126,7 +149,7 @@ pippo <- plot(rf_model, type="l", log="y")
 ```{r}
 library(randomForestExplainer)
 
-rf_explained_model <- randomForest(x=train_data, formula=Apps ~ ., y=dataset$Apps[train_index], data = train_data,  ntree = 1000, nodesize=1, xtest=test_data, ytest= dataset$Apps[-train_index], keep.forest = TRUE, replace = TRUE, proximity=TRUE, oob.prox = FALSE, importance = TRUE, localImp = TRUE)
+rf_explained_model <- randomForest(x=train_data, formula=Apps ~ ., y=dataset$Apps[train_index], data = train_data,  ntree = 100, nodesize=1, xtest=test_data, ytest= dataset$Apps[-train_index], keep.forest = TRUE, replace = TRUE, proximity=TRUE, oob.prox = FALSE, importance = TRUE, localImp = TRUE)
 
 plot(rf_explained_model, main = "Learning curve of the forest")
 legend("topright", c("error for 'dead'", "misclassification error", "error for 'alive'"), lty = c(1,1,1), col = c("green", "black", "red"))
@@ -155,7 +178,7 @@ test_data$Books <- NULL
 
 i = length(test_data)
 # TODO: mtry now is the number of predictors, we should check the paper about Extremely Randomized Trees, I'm not sure if this is correct...
-rf_new <- randomForest(x=train_data, formula=Apps ~ ., y=dataset$Apps[train_index], data = train_data,  ntree = 1000, nodesize=1, xtest=test_data, ytest= dataset$Apps[-train_index], keep.forest = TRUE, replace = TRUE, proximity=TRUE, oob.prox = FALSE, importance = TRUE, localImp = TRUE)
+rf_new <- randomForest(x=train_data, formula=Apps ~ ., y=dataset$Apps[train_index], data = train_data,  ntree = 100, nodesize=1, xtest=test_data, ytest= dataset$Apps[-train_index], keep.forest = TRUE, replace = TRUE, proximity=TRUE, oob.prox = FALSE, importance = TRUE, localImp = TRUE)
 
 rf_new
 
