@@ -146,6 +146,8 @@ pippo <- plot(rf_model, type="l", log="y")
 ```
 
 
+
+
 ```{r}
 library(randomForestExplainer)
 
@@ -181,6 +183,14 @@ i = length(test_data)
 rf_new <- randomForest(x=train_data, formula=Apps ~ ., y=dataset$Apps[train_index], data = train_data,  ntree = 100, nodesize=1, xtest=test_data, ytest= dataset$Apps[-train_index], keep.forest = TRUE, replace = TRUE, proximity=TRUE, oob.prox = FALSE, importance = TRUE, localImp = TRUE)
 
 rf_new
+
+
+#RMSE train_set
+sqrt(rf_new$mse[length(rf_new$mse)])
+
+#RMSE test_set
+sqrt(rf_new$test$mse[length(rf_new$test$mse)])
+
 
 plot_multi_way_importance(measure_importance(rf_new), size_measure = "no_of_nodes")
 

@@ -87,15 +87,33 @@ glm_model <- glm(dataset$Apps[train_index] ~ .,data=train_data, family=poisson)
 
 summary(glm_model)
 
-summary(glm(dataset$Apps ~ .,data=dataset_cleared, family=poisson))
+RMSE <- function(predicted, actual) {
+  sqrt(mean((predicted - actual)^2))
+}
 
-  <- predict.glm(glm_model, newdata = test_data)
+rmse_train_set <- RMSE(predict.glm(glm_model, newdata = test_data), dataset$Apps[-train_index])
+rmse_test_set <- RMSE(predict.glm(glm_model), dataset$Apps[train_index])
+
 #private -> 1934025
 #undergrad -> 1074621
 #undergradPrivate -> 1062182
 #clearedFromVariablesWithBooks -> 549073
 #clearedFromVariables -> 554278
 
-
-
 ```
+
+The rmse for the train_set is inside `rmse_train_set`:
+
+```{r}
+rmse_train_set
+```
+
+The rmse for the test_set is inside `rmse_train_set`:
+
+```{r}
+rmse_test_set
+
+# TODO: TO MOVE UP the following description:
+```
+
+We removed `Personal` because it wasn't significant.

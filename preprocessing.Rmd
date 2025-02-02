@@ -105,7 +105,14 @@ summary(College)
 
 4. The variables does not have NA, so we don't need to replace the missing values
 
-5. The variable `Private` is a categorical one so we convert its values.
+5. We want to check if we have some duplicates
+
+```{r}
+idx <- which(duplicated(College))
+idx
+```
+
+6. The variable `Private` is a categorical one so we convert its values.
 
 ```{r}
 College$Private <- as.factor(College$Private)
@@ -115,12 +122,10 @@ College$Private <- as.numeric(College$Private) - 1  # "Yes" is 1, "No" is 0
 College$Private[11:30]
 ```
 
-6. We can note that `Private` is not balanced 
-
-
+7. We can note that `Private` is not balanced 
 
 ```{r}
-table(College$Private)
+
 
 index_dataset_public <- which(College$Private == 0)
 
@@ -128,30 +133,26 @@ index_dataset_private <- which(College$Private == 1)
 
 private_proportion <- (length(index_dataset_private) / length(index_dataset_public))
 
+table(College$Private)
 private_proportion
 ```
+We can see from `private_proportion` that "Yes" is 2.66 times more frequent than "No".
 
-We can see from private_proportion that "Yes" is 2.65 times more frequent than "No".
-
-# Here we can discuss that Private is unbalanced but 1 to 2 is not a big difference and so we don't need to make corrections to the dataset
-
-7. We want to check if we have some duplicates
+Now we can see the barplot
 
 ```{r}
-idx <- which(duplicated(College))
-idx
+barplot(table(College$Private), main="Private")
 ```
 
 ## Variable visualization
 
-#### OLD Now we can visualize some of the most interesting variables and their distributions.
 
-#### Now we can visualize the variables and their distributions.
+ Now we can visualize the variables and their distributions.
 
-#### Boxplot, excluded Private that are a categorical variable
+ Boxplot, excluded `Private` that is a categorical variable
 ```{r}
 
-par(mfrow=c(2,3))
+par(mfrow=c(1,3))
 for (i in 1:length(College)) {
   if ( names(College[i]) != "Private"){
     boxplot(College[,i], main=names(College[i]))
@@ -159,16 +160,16 @@ for (i in 1:length(College)) {
 }
 ```
 
-###### Boxplot, excluded Private that are a categorical variable
+Histogram, excluded `Private` that is a categorical variable
 
 ```{r}
-par(mfrow=c(2,3))
+par(mfrow=c(1,3))
 for (i in 1:length(College)) {
+  if ( names(College[i]) != "Private"){
     hist(College[,i], main=names(College[i]))
+  }
 }
 ```
-
-OLD We can see that the first two variables are really skewed so we can take the logarithm.
 
 We can see that F.Undergrad and P.Undergrad are really skewed so we can take the logarithm.
 
