@@ -1,0 +1,128 @@
+---
+title: "Project: College Dataset (Merged)"
+author: "Stefano Cattonar, Ines El Gataa, Andrija Nicić, Angelica Rota"
+date: "2025-01-90"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    df_print: paged
+  pdf_document:
+    toc: true
+    toc_depth: 3
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load Required Libraries
+```{r}
+library(randomForest)
+library(caret)
+library(ggplot2)
+library(randomForestExplainer)
+```
+
+## Load and Preprocess Dataset
+```{r}
+dataset <- read.csv("College.csv")
+
+# Remove unnecessary columns
+dataset$X <- NULL
+dataset$Accept <- NULL
+dataset$Enroll <- NULL
+
+dataset$Private <- as.factor(dataset$Private)
+dataset$Private <- as.numeric(dataset$Private) - 1  # Convert to binary (0 = Public, 1 = Private)
+
+# Define Target Variable
+actual_values <- dataset$Apps
+dataset$Apps <- NULL  # Remove from feature set
+
+# Normalize features
+normalize <- function(x) {
+  return((x - min(x)) / (max(x) - min(x)))
+}
+dataset[ , 2:ncol(dataset)] <- lapply(dataset[ , 2:ncol(dataset)], normalize)
+
+# Split Data into Training and Testing
+set.seed(42)
+train_indices <- createDataPartition(actual_values, p = 0.7, list = FALSE)
+train_set <- dataset[train_indices, ]
+test_set <- dataset[-train_indices, ]
+train_target <- actual_values[train_indices]
+test_target <- actual_values[-train_indices]
+```
+
+## Train Full Dataset Model
+```{r}
+rf_model <- randomForest(x=train_set, formula=Apps ~ ., y=train_target,
+ data = train_set, ntree = 100, nodesize=1, xtest=test_set, ytest=test_target,
+ keep.forest = TRUE, replace = TRUE, proximity=TRUE, oob.prox = FALSE)
+
+rf_model
+```
+
+## Train Reduced Feature Model
+```{r}
+train_set$Top10perc <- NULL
+train_set$PhD <- NULL
+train_set$Personal <- NULL
+train_set$Books <- NULL
+
+test_set$Top10perc <- NULL
+test_set$PhD <- NULL
+test_set$Personal <- NULL
+test_set$Books <- NULL
+
+rf_new <- randomForest(x=train_set, formula=Apps ~ ., y=train_target,
+ data = train_set, ntree = 100, nodesize=1, xtest=test_set, ytest=test_target,
+ keep.forest = TRUE, replace = TRUE, proximity=TRUE, oob.prox = FALSE, importance = TRUE, localImp = TRUE)
+
+rf_new
+```
+
+## Train Separate Models for Public and Private Colleges
+```{r}
+train_Y <- train_set[train_set$Private == 1, ]
+test_Y  <- test_set[test_set$Private == 1, ]
+train_N <- train_set[train_set$Private == 0, ]
+test_N  <- test_set[test_set$Private == 0, ]
+
+train_Y_target <- train_target[train_set$Private == 1]
+test_Y_target  <- test_target[test_set$Private == 1]
+train_N_target <- train_target[train_set$Private == 0]
+test_N_target  <- test_target[test_set$Private == 0]
+
+rf_Y <- randomForest(x=train_Y, formula=Apps ~ ., y=train_Y_target,
+ data = train_Y, ntree = 100, nodesize=1, xtest=test_Y, ytest=test_Y_target,
+ keep.forest = TRUE, replace = TRUE, proximity=TRUE, oob.prox = FALSE, importance = TRUE, localImp = TRUE)
+
+rf_N <- randomForest(x=train_N, formula=Apps ~ ., y=train_N_target,
+ data = train_N, ntree = 100, nodesize=1, xtest=test_N, ytest=test_N_target,
+ keep.forest = TRUE, replace = TRUE, proximity=TRUE, oob.prox = FALSE, importance = TRUE, localImp = TRUE)
+
+rf_Y
+rf_N
+```
+
+## Feature Importance Analysis
+```{r}
+importance_frame <- measure_importance(rf_new)
+plot_multi_way_importance(importance_frame, size_measure = "no_of_nodes")
+```
+
+## Learning Curve Analysis
+```{r}
+plot(rf_model, main = "Learning Curve of the Full Model")
+plot(rf_new, main = "Learning Curve of the Reduced Feature Model")
+plot(rf_Y, main = "Learning Curve of the Private Colleges Model")
+plot(rf_N, main = "Learning Curve of the Public Colleges Model")
+```
+
+## Model Explanation
+```{r}
+min_depth_frame <- min_depth_distribution(rf_new)
+plot_min_depth_distribution(min_depth_frame, k=16)
+```
