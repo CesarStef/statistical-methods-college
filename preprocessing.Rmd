@@ -197,13 +197,15 @@ correlation_matrix <- cor(College)
 corrplot(correlation_matrix, method="color", tl.cex = 0.8)
 ```
 
-# As you can see from the corralation matrix, there are some variables that are correlated with each other. We can see that the variables Terminal and PhD are really heavily correlated. This fenomena is caused by the fact that PhD containes a sub group of Terminal. So we can exclude one of the two variables, PhD in our case.
+# As you can see from the corralation matrix, there are some variables that are correlated with each other. We can see that the variables `Terminal` and `PhD` are really directly heavily correlated. This fenomena is caused by the fact that `PhD` containes a sub group of `Terminal`. So we can exclude `PhD`.
 
-# We can also see that the variables Top10perc and Top25perc are correlated. For the same reason we can exclude one of the two variables, Top10perc in our case.
+# We can also see that the variables `Top10perc` and `Top25perc` are directly heavly correlated. For the same reason we can exclude `Top10perc` in our case.
 
-# We can also see that the variables Outstate and Room-and-board are heavy correlated, but it is not a problem because they are not a sub group of each other.
+# We can also see that the variables `Outstate` and `Room-and-board` are directly highly correlated, which is easily explainable by the fact that the more out-of-state students there are, the more expensive room and board will become.
 
+# We can also see that the variables `Private` and `F.Undergrad` are inversaly midly correlated and more then `Private` and `Apps` which is can be explainable by the fact that private colleges have tipical more graduated students than undergraduated.
 
+# The opposite situation is with `Private` and `Outstate` which are directly midly correlated. This can be explained by the fact that private colleges are more expensive than public ones and so, if some student can afford to for out-of-state tuition they can also afford to pay a private college.
 
 
 Now we can visualize some of the correlated variables
