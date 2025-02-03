@@ -197,15 +197,15 @@ correlation_matrix <- cor(College)
 corrplot(correlation_matrix, method="color", tl.cex = 0.8)
 ```
 
-# As you can see from the corralation matrix, there are some variables that are correlated with each other. We can see that the variables `Terminal` and `PhD` are really directly heavily correlated. This fenomena is caused by the fact that `PhD` containes a sub group of `Terminal`. So we can exclude `PhD`.
+As you can see from the corralation matrix, there are some variables that are correlated with each other. We can see that the variables `Terminal` and `PhD` are really directly heavily correlated. This fenomena is caused by the fact that `PhD` containes a sub group of `Terminal`. So we can exclude `PhD`.
 
-# We can also see that the variables `Top10perc` and `Top25perc` are directly heavly correlated. For the same reason we can exclude `Top10perc` in our case.
+`Top10perc` and `Top25perc` are the same so for the same reason we can exclude `Top10perc`.
 
-# We can also see that the variables `Outstate` and `Room-and-board` are directly highly correlated, which is easily explainable by the fact that the more out-of-state students there are, the more expensive room and board will become.
+We can also see that the variables `Outstate` and `Room-and-board` are directly highly correlated, which is easily explainable by the fact that the more out-of-state students there are, the more expensive room and board will become.
 
-# We can also see that the variables `Private` and `F.Undergrad` are inversaly midly correlated and more then `Private` and `Apps` which is can be explainable by the fact that private colleges have tipical more graduated students than undergraduated.
+`Private` and `F.Undergrad` are inversaly midly correlated and more then `Private` and `Apps` which is can be explainable by the fact that private colleges have tipical more graduated students than undergraduated.
 
-# The opposite situation is with `Private` and `Outstate` which are directly midly correlated. This can be explained by the fact that private colleges are more expensive than public ones and so, if some student can afford to for out-of-state tuition they can also afford to pay a private college.
+On the other side, `Private` and `Outstate` which are directly midly correlated. This can be explained by the fact that private colleges are more expensive than public ones and so, if some student can afford to for out-of-state tuition they can also afford to pay a private college.
 
 
 Now we can visualize some of the correlated variables
@@ -227,5 +227,98 @@ college_norm <- College
 college_norm[ , 2:ncol(College)] <- lapply(College[ , 2:ncol(College)], normalize)
 
 summary(college_norm)
+```
+
+# FROM HERE MERGEEEEEE!!!!!
+
+Now we start to clean the dataset as told before:
+
+```{r}
+
+#Copy the dataset
+college_cleared <- College
+
+#Remove the target variable and the variables that are not significant
+college_cleared$Accept <- NULL
+college_cleared$Enroll <- NULL
+college_cleared$X <- NULL
+college_cleared$Apps <- NULL
+college_cleared$Top10perc <- NULL
+college_cleared$PhD <- NULL
+
+```
+
+??? CHAT GPT WHY WE SHOULD DO THAT??? Now we can see the correlation matrix of the cleared dataset
+
+```{r}
+correlation_matrix_cleared <- cor(college_cleared)
+corrplot(correlation_matrix_cleared, method="color", tl.cex = 0.8)
+```
+
+Now we can try a glm with all the usable parameters:
+Try a glm with all the usable parameters:
+
+```{r}
+set.seed(42)
+
+# Calculate the number of training lines (80% of the dataset)
+n_training_lines <- floor(0.8 * nrow(college_cleared))
+
+# Ensure the number of training lines is even
+if (n_training_lines %% 2 != 0) {
+  n_training_lines <- n_training_lines - 1
+}
+
+
+# save index of lines with Private 1 and lines with Private 0
+index_dataset_public <- which(college_cleared$Private == 0)
+
+index_dataset_private <- which(college_cleared$Private == 1)
+
+# Calculate the exact percentage of private 1 lines in the dataset
+percentage_private <- length(index_dataset_private) / nrow(college_cleared)
+
+# take 80% of lines from index_dataset_public
+train_index_dataset_public <- sample(index_dataset_public, floor(n_training_lines * (1 - percentage_private)))
+train_index_dataset_private <- sample(index_dataset_private, floor(n_training_lines * (percentage_private)))
+
+# Cobine the two train_index_dataset_ into train_index
+train_index <- c(train_index_dataset_public, train_index_dataset_private)
+
+
+train_data <- college_cleared[train_index,]
+test_data <- college_cleared[-train_index,]
+```
+
+```{r}
+glm_all_parameters_train_data <- glm(College$Apps[train_index] ~ .,data=train_data, family=poisson)
+
+glm_all_parameters <- glm(College$Apps ~ .,data=college_cleared, family=poisson)
+
+summary(glm_all_parameters)
+summary(glm_all_parameters_train_data)
+```
+
+Now we can calculate the RMSE for the glm:
+
+```{r}
+RMSE <- function(predicted, actual) {
+  sqrt(mean((predicted - actual)^2))
+}
+
+rmse_train_set <- RMSE(predict.glm(glm_all_parameters_train_data, newdata = test_data), College$Apps[-train_index])
+rmse_test_set <- RMSE(predict.glm(glm_all_parameters_train_data), College$Apps[train_index])
+```
+
+The rmse for the train_set is inside `rmse_train_set`:
+
+```{r}
+rmse_train_set
+```
+
+The rmse for the test_set is inside `rmse_train_set`:
+
+```{r}
+rmse_test_set
 ```
 
