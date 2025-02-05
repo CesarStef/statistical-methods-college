@@ -16,7 +16,6 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-
 ```{r loading libraries, message=FALSE, warning=FALSE}
 library(dplyr)
 library(corrplot)
@@ -236,7 +235,7 @@ Now we start to clean the dataset as told before:
 ```{r}
 
 #Copy the dataset
-college_cleared <- College
+college_cleared <- college_norm
 
 #Remove the target variable and the variables that are not significant
 college_cleared$Accept <- NULL
@@ -248,17 +247,11 @@ college_cleared$PhD <- NULL
 
 ```
 
-??? CHAT GPT WHY WE SHOULD DO THAT??? Now we can see the correlation matrix of the cleared dataset
+Now we must split the dataset in train set and test set.
+We will use 80% of the dataset for the training and 20% for the test.
 
 ```{r}
-correlation_matrix_cleared <- cor(college_cleared)
-corrplot(correlation_matrix_cleared, method="color", tl.cex = 0.8)
-```
-
-Now we can try a glm with all the usable parameters:
-Try a glm with all the usable parameters:
-
-```{r}
+# Set a seed to make it deterministic
 set.seed(42)
 
 # Calculate the number of training lines (80% of the dataset)
@@ -282,21 +275,22 @@ percentage_private <- length(index_dataset_private) / nrow(college_cleared)
 train_index_dataset_public <- sample(index_dataset_public, floor(n_training_lines * (1 - percentage_private)))
 train_index_dataset_private <- sample(index_dataset_private, floor(n_training_lines * (percentage_private)))
 
-# Cobine the two train_index_dataset_ into train_index
+# Cobine the two train_index_dataset_* into train_index
 train_index <- c(train_index_dataset_public, train_index_dataset_private)
-
 
 train_data <- college_cleared[train_index,]
 test_data <- college_cleared[-train_index,]
 ```
 
+Now we can fit the glm on the training set:
+
 ```{r}
-glm_all_parameters_train_data <- glm(College$Apps[train_index] ~ .,data=train_data, family=poisson)
+glm <- glm(College$Apps[train_index] ~ .,data=train_data, family=poisson)
 
-glm_all_parameters <- glm(College$Apps ~ .,data=college_cleared, family=poisson)
+#glm_all_parameters <- glm(College$Apps ~ .,data=college_cleared, family=poisson)
 
-summary(glm_all_parameters)
-summary(glm_all_parameters_train_data)
+#summary(glm_all_parameters)
+summary(glm)
 ```
 
 Now we can calculate the RMSE for the glm:
@@ -306,8 +300,9 @@ RMSE <- function(predicted, actual) {
   sqrt(mean((predicted - actual)^2))
 }
 
-rmse_train_set <- RMSE(predict.glm(glm_all_parameters_train_data, newdata = test_data), College$Apps[-train_index])
-rmse_test_set <- RMSE(predict.glm(glm_all_parameters_train_data), College$Apps[train_index])
+
+rmse_train_set <- RMSE(predict.glm(glm), College$Apps[train_index])
+rmse_test_set <- RMSE(predict.glm(glm, newdata = test_data), College$Apps[-train_index])
 ```
 
 The rmse for the train_set is inside `rmse_train_set`:
@@ -316,9 +311,86 @@ The rmse for the train_set is inside `rmse_train_set`:
 rmse_train_set
 ```
 
-The rmse for the test_set is inside `rmse_train_set`:
+The rmse for the test_set is inside `rmse_test_set`:
 
 ```{r}
 rmse_test_set
 ```
 
+The RMSE for the test set is lower than the RMSE for the train set, which is a good sign that the model is not overfitting and it is generalizing well.
+
+# Now we can plot the residuals: YES?
+```{r}
+# Plot the residuals
+plot(glm$residuals, main="Residuals", ylab="Residuals")
+```
+
+We will try to fit a random forest model on the training set and see if it performs better than the glm:
+
+```{r}
+library(randomForest)
+library(randomForestExplainer)
+
+random_forest <- randomForest(x=train_data, formula=Apps ~ ., y=College$Apps[train_index], data = train_data,  ntree = 100, nodesize=1, xtest=test_data, ytest=College$Apps[-train_index], keep.forest = TRUE, replace = TRUE, proximity=TRUE, oob.prox = FALSE, importance = TRUE, localImp = TRUE)
+
+random_forest
+```
+
+Now we can calculate the RMSE for the random forest model:
+
+```{r}
+
+#RMSE train_set 
+rf_rmse_train_set <- sqrt(random_forest$mse[length(random_forest$mse)])
+
+#RMSE test_set
+rf_rmse_test_set <- sqrt(random_forest$test$mse[length(random_forest$test$mse)])
+
+```
+
+The rmse for the train_set is inside `rf_rmse_train_set`:
+
+```{r}
+rf_rmse_train_set
+```
+
+The rmse for the test_set is inside `rf_rmse_test_set`:
+
+```{r}
+rf_rmse_test_set
+```
+
+The RMSE of the random forest model is lower than the RMSE of the glm model, which means that the random forest model is performing better than the glm model.
+
+Now we can plot how the MSE of the model changes with the number of trees:
+
+```{r}
+plot(random_forest, main = "Learning curve of the forest")
+```
+
+And if we increse the number of trees from 100 to 1000:
+
+```{r}
+
+random_forest_1000 <- randomForest(x=train_data, formula=Apps ~ ., y=College$Apps[train_index], data = train_data,  ntree = 1000, nodesize=1, xtest=test_data, ytest=College$Apps[-train_index], keep.forest = TRUE, replace = TRUE, proximity=TRUE, oob.prox = FALSE, importance = TRUE, localImp = TRUE)
+
+random_forest_1000
+
+plot(random_forest_1000, main = "Learning curve of the forest")
+
+#RMSE train_set 
+rf_rmse_train_set_1000 <- sqrt(random_forest_1000$mse[length(random_forest_1000$mse)])
+
+#RMSE test_set
+rf_rmse_test_set_1000 <- sqrt(random_forest_1000$test$mse[length(random_forest_1000$test$mse)])
+
+rf_rmse_train_set_1000
+
+rf_rmse_test_set_1000
+
+measure_importance(random_forest)
+
+plot_multi_way_importance(measure_importance(random_forest), size_measure = "no_of_nodes")
+
+measure_importance(random_forest_1000)
+```
