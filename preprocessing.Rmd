@@ -410,3 +410,101 @@ From the graph we can see that there are a number of threes that have better per
 min_mse_index <- which(random_forest_1000$mse == min_mse)
 
 ```
+
+##### Lets go back to the results for the glm model
+
+```{r}
+summary(glm)
+```
+
+
+##### There are a couple of takeaways here. First of all the the residual deviance is much lower than the null deviance, so the glm model explains a lot of variance. However the residual deviance od 221,113 is still quite large. Compared to the degrees of freedom this could be due to potential model misspecification, which could be due to non-linearity.
+
+
+##### Now when we look at back at the multi way importance plot we see that the F.Undergrad and P.Undergrad are the most important features. Lets see the partial dependence plot for these two features.
+
+```{r}
+library(pdp)
+
+names <- colnames(train_data)
+
+names <- names[-1]
+
+names
+
+# Partial dependence plot for F.Undergrad
+for (pred in names) {
+  pdp_obj <- partial(random_forest_1000, pred.var = pred, train = train_data)
+  plot(pdp_obj, main = paste("Partial Dependence for", pred))
+}
+
+```
+
+##### Most of the features show us that they have a non-linear relatiohship with the response variable.
+
+##### These two points regarding the GLM and the Random forest, suggest that a GAM could be a very strong alternative due to non-linearity between the featuers and the response variable.
+
+##### Now lets fit a GAM on a training set
+
+```{r}
+library(mgcv)
+# Fit GAM model
+gam_model <- gam(College$Apps[train_index]  ~ s(F.Undergrad, k=3) + s(P.Undergrad, k=3) + 
+                               Grad.Rate + Outstate + 
+                               Room.Board + s(Expend, k=3) + 
+                               s(Books, k=3) + s(Personal, k=3) + 
+                               s(S.F.Ratio, k=3) + s(perc.alumni, k=3) + 
+                               s(Top25perc, k=3) + s(Terminal, k=3),
+                 family = poisson, data = train_data, select= TRUE)
+
+summary(gam_model)
+```
+
+##### And compare it to the glm
+
+```{r}
+AIC(glm, gam_model) 
+```
+
+##### I we can see an improvement with the GAM model, a lower AIC and higher degrees of freedom. Lets compare the RMSE to the random forest model.
+
+```{r}
+gam_preds_test <- predict(gam_model, test_data, type = "response")
+
+rmse_gam_test <- sqrt(mean((College$Apps[-train_index] - gam_preds_test)^2))
+
+rmse_gam_test
+
+
+gam_preds_train <- predict(gam_model, train_data, type = "response")
+
+rmse_gam_train <- sqrt(mean((College$Apps[train_index] - gam_preds_train)^2))
+
+rmse_gam_train
+```
+
+##### We can also see a slight improvement in RMSE compared to the random forest models. 
+
+
+## Plot for visualising smooth terms
+```{r}
+
+plot(gam_model, pages = 1, shade = TRUE, seWithMean = TRUE)
+```
+
+
+## Comparing predictions of the GAM vs Random forest
+
+```{r}
+
+plot(College$Apps[-train_index], gam_preds_test, col = "blue", pch = 16,
+     main = "GAM vs. Random Forest Predictions",
+     xlab = "Actual Applications", ylab = "Predicted Applications")
+points(College$Apps[-train_index], predict(random_forest_1000, test_data), col = "red", pch = 16)
+
+# Add a perfect prediction reference line
+abline(0, 1, col = "black", lwd = 2, lty = 2)
+
+legend("topleft", legend = c("GAM", "Random Forest", "Perfect Prediction"), 
+       col = c("blue", "red", "black"), pch = c(16, 16, NA), lty = c(NA, NA, 2), lwd = c(NA, NA, 2))
+```
