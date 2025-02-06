@@ -200,13 +200,6 @@ As you can see from the corralation matrix, there are some variables that are co
 
 `Top10perc` and `Top25perc` are the same so for the same reason we can exclude `Top10perc`.
 
-We can also see that the variables `Outstate` and `Room-and-board` are directly highly correlated, which is easily explainable by the fact that the more out-of-state students there are, the more expensive room and board will become.
-
-`Private` and `F.Undergrad` are inversaly midly correlated and more then `Private` and `Apps` which is can be explainable by the fact that private colleges have tipical more graduated students than undergraduated.
-
-On the other side, `Private` and `Outstate` which are directly midly correlated. This can be explained by the fact that private colleges are more expensive than public ones and so, if some student can afford to for out-of-state tuition they can also afford to pay a private college.
-
-
 Now we can visualize some of the correlated variables
 
 ```{r}
@@ -368,6 +361,14 @@ Now we can plot how the MSE of the model changes with the number of trees:
 plot(random_forest, main = "Learning curve of the forest")
 ```
 
+Now explore how the variables are used in the random forest:
+
+```{r}
+measure_importance(random_forest)
+
+plot_multi_way_importance(measure_importance(random_forest), size_measure = "no_of_nodes")
+```
+
 And if we increse the number of trees from 100 to 1000:
 
 ```{r}
@@ -378,19 +379,34 @@ random_forest_1000
 
 plot(random_forest_1000, main = "Learning curve of the forest")
 
+
 #RMSE train_set 
 rf_rmse_train_set_1000 <- sqrt(random_forest_1000$mse[length(random_forest_1000$mse)])
 
 #RMSE test_set
 rf_rmse_test_set_1000 <- sqrt(random_forest_1000$test$mse[length(random_forest_1000$test$mse)])
+```
 
+Analyze Root Mean Square Error for the random forest model with 1000 trees:
+
+```{r}
 rf_rmse_train_set_1000
 
 rf_rmse_test_set_1000
+```
 
-measure_importance(random_forest)
+And now how the variables are used:
 
-plot_multi_way_importance(measure_importance(random_forest), size_measure = "no_of_nodes")
-
+```{r}
 measure_importance(random_forest_1000)
+plot_multi_way_importance(measure_importance(random_forest_1000), size_measure = "no_of_nodes")
+```
+
+From the graph we can see that there are a number of threes that have better performance:
+
+```{r}
+
+# Extract the index of the minimum from random_forest_1000$mse array:
+min_mse_index <- which(random_forest_1000$mse == min_mse)
+
 ```
