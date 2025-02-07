@@ -406,6 +406,8 @@ From the graph we can see that there are a number of threes that have better per
 
 ```{r}
 
+min_mse <- min(random_forest_1000$mse)
+
 # Extract the index of the minimum from random_forest_1000$mse array:
 min_mse_index <- which(random_forest_1000$mse == min_mse)
 
