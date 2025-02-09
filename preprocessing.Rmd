@@ -404,14 +404,6 @@ plot_multi_way_importance(measure_importance(random_forest_1000), size_measure =
 
 From the graph we can see that there are a number of threes that have better performance:
 
-```{r}
-
-min_mse <- min(random_forest_1000$mse)
-
-# Extract the index of the minimum from random_forest_1000$mse array:
-min_mse_index <- which(random_forest_1000$mse == min_mse)
-
-```
 
 ##### Lets go back to the results for the glm model
 
@@ -451,24 +443,18 @@ for (pred in names) {
 ```{r}
 library(mgcv)
 # Fit GAM model
-gam_model <- gam(College$Apps[train_index]  ~ s(F.Undergrad, k=3) + s(P.Undergrad, k=3) + 
+gam_model <- gam(College$Apps[train_index]  ~ F.Undergrad + P.Undergrad + 
                                Grad.Rate + Outstate + 
-                               Room.Board + s(Expend, k=3) + 
-                               s(Books, k=3) + s(Personal, k=3) + 
-                               s(S.F.Ratio, k=3) + s(perc.alumni, k=3) + 
-                               s(Top25perc, k=3) + s(Terminal, k=3),
-                 family = poisson, data = train_data, select= TRUE)
+                               Room.Board + Expend + 
+                               Books + Personal + 
+                               S.F.Ratio + perc.alumni + 
+                               Top25perc + Terminal,
+                 family = poisson, data = train_data)
 
 summary(gam_model)
 ```
 
 ##### And compare it to the glm
-
-```{r}
-AIC(glm, gam_model) 
-```
-
-##### I we can see an improvement with the GAM model, a lower AIC and higher degrees of freedom. Lets compare the RMSE to the random forest model.
 
 ```{r}
 gam_preds_test <- predict(gam_model, test_data, type = "response")
@@ -487,26 +473,65 @@ rmse_gam_train
 
 ##### We can also see a slight improvement in RMSE compared to the random forest models. 
 
+##### Now lets fine-tune the model a bit to see if we can get even better results
 
-## Plot for visualising smooth terms
 ```{r}
+library(mgcv)
+# Fit GAM model
+gam_model_2 <- gam(College$Apps[train_index]  ~ s(F.Undergrad, k=3) + s(P.Undergrad, k=3) + 
+                               Grad.Rate + Outstate + 
+                               Room.Board + s(Expend, k=3) + 
+                               s(Books, k=3) + s(Personal, k=3) + 
+                               s(S.F.Ratio, k=3) + s(perc.alumni, k=3) + 
+                               s(Top25perc, k=3) + s(Terminal, k=3),
+                 family = poisson, data = train_data, select= TRUE)
 
-plot(gam_model, pages = 1, shade = TRUE, seWithMean = TRUE)
+summary(gam_model_2)
 ```
 
+##### And lets see the RMSE
+
+```{r}
+gam_preds_test_2 <- predict(gam_model_2, test_data, type = "response")
+
+rmse_gam_test_2 <- sqrt(mean((College$Apps[-train_index] - gam_preds_test_2)^2))
+
+rmse_gam_test_2
+
+
+gam_preds_train_2 <- predict(gam_model_2, train_data, type = "response")
+
+rmse_gam_train_2 <- sqrt(mean((College$Apps[train_index] - gam_preds_train_2)^2))
+
+rmse_gam_train_2
+```
+#### Comparing the models
+
+```{r}
+AIC(gam_model,gam_model_2)
+```
 
 ## Comparing predictions of the GAM vs Random forest
 
 ```{r}
 
-plot(College$Apps[-train_index], gam_preds_test, col = "blue", pch = 16,
+plt_num <- length(College$Apps[-train_index])-1
+
+plot(0:plt_num, gam_preds_test, col = "blue", pch = 16,
      main = "GAM vs. Random Forest Predictions",
-     xlab = "Actual Applications", ylab = "Predicted Applications")
-points(College$Apps[-train_index], predict(random_forest_1000, test_data), col = "red", pch = 16)
+     xlab = "School Index", ylab = "Applications")
 
-# Add a perfect prediction reference line
-abline(0, 1, col = "black", lwd = 2, lty = 2)
 
-legend("topleft", legend = c("GAM", "Random Forest", "Perfect Prediction"), 
-       col = c("blue", "red", "black"), pch = c(16, 16, NA), lty = c(NA, NA, 2), lwd = c(NA, NA, 2))
+points(0:plt_num, predict(random_forest_1000, test_data), col = "red", pch = 16)
+points(0:plt_num, College$Apps[-train_index], col = "black", pch = 16)
+
+for (i in 0:plt_num) {
+  abline(v = i, col = "gray", lwd = 0.5, lty = 2)  # Dashed thin vertical lines
+}
+
+
+legend("topleft",inset=c(0,-0.1), legend = c("Actual Value", "Random Forest","GAM"), 
+       col = c("black", "red", "blue"), pch = c(16, 16, 16), bty = "n", horiz=TRUE,xpd=TRUE)
+
+
 ```
