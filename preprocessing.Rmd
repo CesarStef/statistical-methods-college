@@ -3,13 +3,13 @@ title: "Project: College Dataset"
 author: "Stefano Cattonar, Ines El Gataa, Andrija Nicić, Angelica Rota"
 date: "2025-01-90"
 output:
+  pdf_document:
+    toc: true
+    toc_depth: 3
   html_document:
     toc: true
     toc_depth: '3'
     df_print: paged
-  pdf_document:
-    toc: true
-    toc_depth: 3
 ---
 
 ```{r setup, include=FALSE}
@@ -221,8 +221,6 @@ college_norm[ , 2:ncol(College)] <- lapply(College[ , 2:ncol(College)], normaliz
 summary(college_norm)
 ```
 
-# FROM HERE MERGEEEEEE!!!!!
-
 Now we start to clean the dataset as told before:
 
 ```{r}
@@ -280,9 +278,6 @@ Now we can fit the glm on the training set:
 ```{r}
 glm <- glm(College$Apps[train_index] ~ .,data=train_data, family=poisson)
 
-#glm_all_parameters <- glm(College$Apps ~ .,data=college_cleared, family=poisson)
-
-#summary(glm_all_parameters)
 summary(glm)
 ```
 
@@ -312,13 +307,7 @@ rmse_test_set
 
 The RMSE for the test set is lower than the RMSE for the train set, which is a good sign that the model is not overfitting and it is generalizing well.
 
-# Now we can plot the residuals: YES?
-```{r}
-# Plot the residuals
-plot(glm$residuals, main="Residuals", ylab="Residuals")
-```
-
-We will try to fit a random forest model on the training set and see if it performs better than the glm:
+Now, we will try to fit a random forest model on the training set and see if it performs better than the glm:
 
 ```{r}
 library(randomForest)
@@ -358,15 +347,18 @@ The RMSE of the random forest model is lower than the RMSE of the glm model, whi
 Now we can plot how the MSE of the model changes with the number of trees:
 
 ```{r}
-plot(random_forest, main = "Learning curve of the forest")
+plot(random_forest, main = "Random forest MSE on train set vs number of trees")
 ```
 
 Now explore how the variables are used in the random forest:
 
 ```{r}
-measure_importance(random_forest)
+importance_random_forest <- measure_importance(random_forest)
 
-plot_multi_way_importance(measure_importance(random_forest), size_measure = "no_of_nodes")
+importance_random_forest
+
+plot_multi_way_importance(importance_random_forest, y_measure = "no_of_nodes", x_measure = "times_a_root", size_measure = "no_of_trees", no_of_labels = 13)
+
 ```
 
 And if we increse the number of trees from 100 to 1000:
@@ -377,8 +369,7 @@ random_forest_1000 <- randomForest(x=train_data, formula=Apps ~ ., y=College$App
 
 random_forest_1000
 
-plot(random_forest_1000, main = "Learning curve of the forest")
-
+plot(random_forest_1000, main = "Random forest MSE on train set vs number of trees")
 
 #RMSE train_set 
 rf_rmse_train_set_1000 <- sqrt(random_forest_1000$mse[length(random_forest_1000$mse)])
@@ -398,12 +389,39 @@ rf_rmse_test_set_1000
 And now how the variables are used:
 
 ```{r}
-measure_importance(random_forest_1000)
-plot_multi_way_importance(measure_importance(random_forest_1000), size_measure = "no_of_nodes")
+importance_random_forest_1000 <- measure_importance(random_forest_1000)
+plot_multi_way_importance(importance_random_forest_1000, y_measure = "no_of_nodes", x_measure = "times_a_root", size_measure = "no_of_trees", no_of_labels = 13)
 ```
 
-From the graph we can see that there are a number of threes that have better performance:
+How said in the original paper, the random forest never overfits, so we can try to increase the number of trees to 10000:
 
+```{r}
+
+random_forest_10000 <- randomForest(x=train_data, formula=Apps ~ ., y=College$Apps[train_index], data = train_data,  ntree = 10000, nodesize=1, xtest=test_data, ytest=College$Apps[-train_index], keep.forest = TRUE, replace = TRUE, proximity=TRUE, oob.prox = FALSE, importance = TRUE, localImp = TRUE)
+
+random_forest_10000
+
+plot(random_forest_10000, main = "Random forest MSE on train set vs number of trees")
+
+#RMSE train_set 
+rf_rmse_train_set_10000 <- sqrt(random_forest_10000$mse[length(random_forest_10000$mse)])
+
+#RMSE test_set
+rf_rmse_test_set_10000 <- sqrt(random_forest_10000$test$mse[length(random_forest_10000$test$mse)])
+
+rf_rmse_train_set_10000
+
+rf_rmse_test_set_10000
+
+importance_random_forest_10000 <- measure_importance(random_forest_10000)
+
+importance_random_forest_10000
+
+plot_multi_way_importance(importance_random_forest_10000, y_measure = "no_of_nodes", x_measure = "times_a_root", size_measure = "no_of_trees", no_of_labels = 13)
+
+```
+
+We can see that the random forest with 10000 trees perform sligthly better the the previous one.
 
 ##### Lets go back to the results for the glm model
 
