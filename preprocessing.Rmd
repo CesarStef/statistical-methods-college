@@ -452,6 +452,10 @@ plot_multi_way_importance(importance_random_forest_10000, y_measure = "no_of_nod
 
 We can see that the random forest with 10000 trees perform sligthly better the the previous one.
 
+# GAM
+
+## Motivations to using GAM
+
 ##### Lets go back to the results for the glm model
 
 ```{r}
@@ -485,6 +489,8 @@ for (pred in names) {
 
 ##### These two points regarding the GLM and the Random forest, suggest that a GAM could be a very strong alternative due to non-linearity between the featuers and the response variable.
 
+## Model fitting and fine tuning
+
 ##### Now lets fit a GAM on a training set
 
 ```{r}
@@ -510,7 +516,6 @@ rmse_gam_test <- sqrt(mean((College$Apps[-train_index] - gam_preds_test)^2))
 
 rmse_gam_test
 
-
 gam_preds_train <- predict(gam_model, train_data, type = "response")
 
 rmse_gam_train <- sqrt(mean((College$Apps[train_index] - gam_preds_train)^2))
@@ -519,6 +524,8 @@ rmse_gam_train
 ```
 
 ##### We can also see a slight improvement in RMSE compared to the random forest models. 
+
+
 
 ##### Now lets fine-tune the model a bit to see if we can get even better results
 
@@ -552,13 +559,15 @@ rmse_gam_train_2 <- sqrt(mean((College$Apps[train_index] - gam_preds_train_2)^2)
 
 rmse_gam_train_2
 ```
-#### Comparing the models
+## Comparing the models
 
 ```{r}
 AIC(gam_model,gam_model_2)
 ```
 
-## Comparing predictions of the GAM vs Random forest
+
+#### Comparing predictions of the GAM vs Random forest \
+
 
 ```{r}
 
